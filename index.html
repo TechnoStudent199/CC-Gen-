@@ -152,8 +152,8 @@ function getRandomDigit() {
 
 // Generate a full card number with fixed length 16
 function generateCardNumber(bin) {
-  const length = 16; // fixed
-  let number = bin ? bin : '';
+  const length = 16;
+  let number = bin ? bin.substring(0, length - 1) : '';
   while (number.length < length - 1) {
     number += getRandomDigit();
   }
@@ -161,21 +161,25 @@ function generateCardNumber(bin) {
   return number + checkDigit;
 }
 
-// Luhn algorithm for check digit
+// Correct Luhn algorithm for check digit generation
 function calculateCheckDigit(number) {
-  let sum = 0;
-  let doubleNext = true; // start doubling from right
-  for (let i = number.length - 1; i >= 0; i--) {
-    let digit = parseInt(number[i], 10);
-    if (doubleNext) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
+    let sum = 0;
+    let isSecond = false;
+    for (let i = number.length - 1; i >= 0; i--) {
+        let digit = parseInt(number[i], 10);
+
+        if (isSecond) {
+            digit *= 2;
+            if (digit > 9) {
+                digit -= 9;
+            }
+        }
+        sum += digit;
+        isSecond = !isSecond;
     }
-    sum += digit;
-    doubleNext = !doubleNext;
-  }
-  return (10 - (sum % 10)) % 10;
+    return (10 - (sum % 10)) % 10;
 }
+
 
 // Animate Generation Button
 function animateButton(btn) {
