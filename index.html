@@ -12,7 +12,8 @@ body {
   font-family: 'Orbitron', sans-serif;
   height: 100vh;
   background: #000;
-  overflow: hidden;
+  /* Allow page to scroll when content overflows */
+  overflow: auto;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -102,6 +103,27 @@ button:hover {
   opacity: 0;
   animation: fadeInChars 0.3s forwards;
 }
+
+/* masker links (cool look) */
+.links {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+.link-mask {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  margin: 0 6px;
+  border-radius: 999px;
+  background: rgba(0,255,255,0.15);
+  color: #aaf;
+  text-decoration: none;
+  font-family: 'Orbitron', sans-serif;
+  border: 1px solid rgba(0,255,255,0.25);
+}
+.link-mask:hover {
+  background: rgba(0,255,255,0.35);
+}
+@media (max-width: 700px) { h1 { font-size: 1.6rem; } }
 </style>
 </head>
 <body>
@@ -109,24 +131,29 @@ button:hover {
 <div id="particles-js"></div>
 
 <div class="container">
-<h1>🔥 Spiced-up CC Generator 🔥</h1>
-<form id="ccForm" onsubmit="return false;">
-  <label for="bin">BIN (Start Digits):</label>
-  <input type="text" id="bin" placeholder="Optional" />
+  <div class="links" aria-label="Quick links">
+    <a class="link-mask" href="checker.html" target="_blank" rel="noopener" title="Checker Masker">Checker Masker</a>
+    <a class="link-mask" href="binlookup.html" target="_blank" rel="noopener" title="Binlookup Masker">Binlookup Masker</a>
+  </div>
 
-  <label for="expiry">Expiration (MM/YY):</label>
-  <input type="text" id="expiry" placeholder="MM/YY" />
+  <h1>🔥 Spiced-up CC Generator 🔥</h1>
+  <form id="ccForm" onsubmit="return false;">
+    <label for="bin">BIN (Start Digits):</label>
+    <input type="text" id="bin" placeholder="Optional" />
 
-  <label for="cvv">CVV:</label>
-  <input type="text" id="cvv" maxlength="4" placeholder="CVV" />
+    <label for="expiry">Expiration (MM/YY):</label>
+    <input type="text" id="expiry" placeholder="MM/YY" />
 
-  <label for="quantity">Number of CCs to generate:</label>
-  <input type="number" id="quantity" min="1" max="50" value="10" />
+    <label for="cvv">CVV:</label>
+    <input type="text" id="cvv" maxlength="4" placeholder="CVV" />
 
-  <button id="generateBtn" type="button">🚀 Generate CCs</button>
-</form>
+    <label for="quantity">Number of CCs to generate:</label>
+    <input type="number" id="quantity" min="1" max="50" value="10" />
 
-<div id="output">Your generated cards will appear here...</div>
+    <button id="generateBtn" type="button">🚀 Generate CCs</button>
+  </form>
+
+  <div id="output">Your generated cards will appear here...</div>
 </div>
 
 <!-- Particles.js library -->
