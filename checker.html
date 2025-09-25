@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🔥 CC Checker Mock (Demo) 🔥</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scrolling on any screen */
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #000;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .container {
+    background: rgba(0,0,0,0.75);
+    padding: 1.25rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 720px;
+    z-index: 1;
+    box-shadow: 0 0 20px #00ffff33;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  h1 {
+    text-align: center;
+    margin: 0 0 0.75rem;
+    font-size: 2rem;
+    color: #00ffff;
+    letter-spacing: 2px;
+  }
+
+  a {
+    text-align: center;
+    color: #00ffff;
+    margin: 0.5rem 0 0.75rem;
+    display: block;
+  }
+
+  textarea {
+    margin-top: 0.5rem;
+    width: 100%;
+    min-height: 180px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0.9rem;
+    font-family: monospace;
+    white-space: pre;
+    font-size: 0.95rem;
+    color: #fff;
+    border: 1px solid #00ffff88;
+    resize: vertical;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 0.5rem 0 0.9rem;
+  }
+
+  label {
+    font-size: 0.9rem;
+    color: #ddd;
+  }
+
+  input[type="checkbox"] {
+    transform: translateY(1px);
+  }
+
+  button {
+    margin-top: 0.9rem;
+    padding: 0.8rem;
+    font-size: 1.05rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #00ffff, #ff00ff);
+    color: #fff;
+    font-family: inherit;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 10px #00ffff66;
+  }
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px #00ffff, 0 0 40px #ff00ff;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  #results-container {
+    margin-top: 1rem;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 0.9rem;
+    min-height: 100px;
+    font-family: monospace;
+    color: #fff;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .live { color: #00ff00; }
+  .dead { color: #ff4d4d; }
+  .unknown { color: #888888; }
+
+  @media (max-width: 700px) {
+    h1 { font-size: 1.6rem; }
+    textarea { min-height: 160px; font-size: 0.92rem; }
+  }
+
+  @media (max-width: 420px) {
+    h1 { font-size: 1.4rem; }
+    button { font-size: 1rem; padding: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" aria-label="Credit Card Checker Mock">
+  <h1>🔥 CC Checker Mock (Demo) 🔥</h1>
+  <a href="index.html">← Back to Generator</a>
+
+  <textarea id="card-list" placeholder="Paste cards one per line... format: 1234567812345678|MM|YY|CVV"></textarea>
+
+  <div class="row" aria-label="Options">
+    <label><input type="checkbox" id="randomize" /> Randomize results (demo)</label>
+  </div>
+
+  <button id="checkBtn" aria-label="Check Cards">⚡ Check Cards</button>
+
+  <div id="results-container" aria-live="polite"></div>
+</div>
+
+<script>
+// Simple Luhn algorithm for basic checksum (demo purposes)
+function luhnCheck(num) {
+  const digits = String(num).replace(/\D+/g, '');
+  if (digits.length < 12) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = parseInt(digits[i], 10);
+    if (shouldDouble) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+}
+
+function appendResult(container, cardLine, status) {
+  let statusClass = 'unknown';
+  if (status.toLowerCase().includes('live')) statusClass = 'live';
+  else if (status.toLowerCase().includes('dead') || status.toLowerCase().includes('invalid')) statusClass = 'dead';
+  container.innerHTML += `<div class="result">${cardLine} -> <span class="${statusClass}">${status}</span></div>`;
+}
+
+document.getElementById('checkBtn').addEventListener('click', () => {
+  const area = document.getElementById('card-list');
+  const resultsContainer = document.getElementById('results-container');
+  const randomize = document.getElementById('randomize').checked;
+  const lines = area.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  resultsContainer.innerHTML = '';
+
+  if (lines.length === 0) {
+    resultsContainer.innerHTML = `<span class="unknown">Please paste some cards to check.</span>`;
+    return;
+  }
+
+  for (const line of lines) {
+    // Expect format: number|MM|YY|CVV (we'll be lenient)
+    const parts = line.split('|').map(p => p.trim()).filter(Boolean);
+    const rawNum = parts[0] || line.split(/\s+/)[0];
+    const digits = rawNum.replace(/\D+/g, '');
+    if (digits.length < 12) {
+      appendResult(resultsContainer, line, 'Invalid format');
+      continue;
+    }
+
+    const isValid = luhnCheck(digits);
+    if (!isValid) {
+      appendResult(resultsContainer, line, 'Dead (demo: invalid checksum)');
+      continue;
+    }
+
+    let status;
+    if (randomize) {
+      status = (Math.random() < 0.5) ? 'Live (demo)' : 'Dead (demo)';
+    } else {
+      const lastDigit = parseInt(digits[digits.length - 1], 10);
+      status = (lastDigit % 2 === 0) ? 'Live (demo)' : 'Dead (demo)';
+    }
+    appendResult(resultsContainer, line, status);
+  }
+});
+</script>
+</body>
+</html>
