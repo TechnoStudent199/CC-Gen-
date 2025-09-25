@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🔥 Spiced-up CC Generator 🔥</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  height: 100vh;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  color: #fff;
+}
+#particles-js {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.container {
+  position: relative;
+  background: rgba(0,0,0,0.75);
+  padding: 2rem;
+  border-radius: 15px;
+  max-width: 520px;
+  width: 100%;
+  z-index: 1;
+  box-shadow: 0 0 20px #00ffff33;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  color: #00ffff;
+  letter-spacing: 2px;
+}
+form {
+  display: flex;
+  flex-direction: column;
+}
+label {
+  margin-top: 0.8rem;
+  font-weight: bold;
+}
+input {
+  padding: 0.7rem;
+  margin-top: 0.3rem;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+}
+button {
+  margin-top: 1.5rem;
+  padding: 0.8rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(45deg, #00ffff, #ff00ff);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px #00ffff66;
+}
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px #00ffff, 0 0 40px #ff00ff;
+}
+#output {
+  margin-top: 2rem;
+  max-height: 350px;
+  overflow-y: auto;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#output.show {
+  opacity: 1;
+}
+
+/* Animate characters one by one for a cool effect */
+@keyframes fadeInChars {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.char {
+  display: inline-block;
+  opacity: 0;
+  animation: fadeInChars 0.3s forwards;
+}
+</style>
+</head>
+<body>
+<!-- Particles.js background -->
+<div id="particles-js"></div>
+
+<div class="container">
+<h1>🔥 Spiced-up CC Generator 🔥</h1>
+<form id="ccForm" onsubmit="return false;">
+  <label for="bin">BIN (Start Digits):</label>
+  <input type="text" id="bin" placeholder="Optional" />
+
+  <label for="expiry">Expiration (MM/YY):</label>
+  <input type="text" id="expiry" placeholder="MM/YY" />
+
+  <label for="cvv">CVV:</label>
+  <input type="text" id="cvv" maxlength="4" placeholder="CVV" />
+
+  <label for="quantity">Number of CCs to generate:</label>
+  <input type="number" id="quantity" min="1" max="50" value="10" />
+
+  <button id="generateBtn" type="button">🚀 Generate CCs</button>
+</form>
+
+<div id="output">Your generated cards will appear here...</div>
+</div>
+
+<!-- Particles.js library -->
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+<script>
+// Initialize particle background
+particlesJS("particles-js", {
+  "particles": {
+    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+    "color": { "value": "#00ffff" },
+    "shape": { "type": "circle" },
+    "opacity": { "value": 0.4, "random": true },
+    "size": { "value": 3, "random": true },
+    "move": { "enable": true, "speed": 1.5, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
+  }
+});
+
+// Utility functions
+function getRandomDigit() {
+  return Math.floor(Math.random() * 10);
+}
+
+// Generate a full card number with fixed length 16
+function generateCardNumber(bin) {
+  const length = 16; // fixed
+  let number = bin ? bin : '';
+  while (number.length < length - 1) {
+    number += getRandomDigit();
+  }
+  const checkDigit = calculateCheckDigit(number);
+  return number + checkDigit;
+}
+
+// Luhn algorithm for check digit
+function calculateCheckDigit(number) {
+  let sum = 0;
+  let doubleNext = true; // start doubling from right
+  for (let i = number.length - 1; i >= 0; i--) {
+    let digit = parseInt(number[i], 10);
+    if (doubleNext) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    doubleNext = !doubleNext;
+  }
+  return (10 - (sum % 10)) % 10;
+}
+
+// Animate Generation Button
+function animateButton(btn) {
+  btn.style.transform = "scale(0.9)";
+  setTimeout(() => {
+    btn.style.transform = "scale(1)";
+  }, 150);
+}
+
+// Generate and display CCs with effects
+document.getElementById('generateBtn').onclick = () => {
+  const bin = document.getElementById('bin').value.trim();
+  const expiry = document.getElementById('expiry').value.trim() || '12/25';
+  const cvvInput = document.getElementById('cvv').value.trim();
+  const quantity = parseInt(document.getElementById('quantity').value);
+  const outputDiv = document.getElementById('output');
+
+  // Animate button
+  animateButton(document.getElementById('generateBtn'));
+
+  // Clear previous output
+  outputDiv.innerHTML = '';
+  outputDiv.classList.remove('show');
+
+  // Generate CCs with animated appearance
+  const ccList = [];
+  for (let i=0; i<quantity; i++) {
+    const ccNumber = generateCardNumber(bin);
+    const cvv = cvvInput !== '' ? cvvInput : (Math.floor(Math.random() * 900) + 100).toString();
+    ccList.push({ ccNumber, expiry, cvv });
+  }
+
+  // Function to animate each line
+  function revealLine(index) {
+    if (index >= ccList.length) {
+      outputDiv.classList.add('show');
+      return;
+    }
+    const line = ccList[index];
+    const spanLine = document.createElement('div');
+    spanLine.innerHTML = '';
+    // Create characters with delay
+    const lineStr = `CC: ${line.ccNumber} | Exp: ${line.expiry} | CVV: ${line.cvv}`;
+    for (let ch of lineStr) {
+      const spanChar = document.createElement('span');
+      spanChar.textContent = ch;
+      spanChar.className = 'char';
+      spanChar.style.animationDelay = `${Math.random()*0.3}s`;
+      spanLine.appendChild(spanChar);
+    }
+    outputDiv.appendChild(spanLine);
+
+    // Animate characters sequentially
+    const chars = spanLine.querySelectorAll('.char');
+    chars.forEach((ch, i) => {
+      setTimeout(() => {
+        ch.style.opacity = 1;
+        ch.style.transform = 'translateY(0)';
+      }, i*20);
+    });
+
+    // Reveal next line after delay
+    setTimeout(() => {
+      revealLine(index + 1);
+    }, 300 + Math.random() * 300);
+  }
+
+  revealLine(0);
+};
+</script>
+</body>
+  </html>
