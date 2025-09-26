@@ -141,7 +141,7 @@ button:hover {
     <label for="bin">BIN (Start Digits):</label>
     <input type="text" id="bin" placeholder="Optional" />
 
-    <label for="expiry">Expiration (MM/YY):</label>
+    <label for="expiry">Expiration (MM/YY or MM/YYYY):</label>
     <input type="text" id="expiry" placeholder="MM/YY" />
 
     <label for="cvv">CVV:</label>
@@ -207,8 +207,40 @@ function calculateCheckDigit(number) {
     return (10 - (sum % 10)) % 10;
 }
 
+// Helper: parse expiry input and return { mm, yyyy }
+function parseExpiryInput(expiryInput) {
+  let mm = '01';
+  let yyyy = '2025';
 
-// Animate Generation Button
+  if (expiryInput && expiryInput.includes('/')) {
+    const [part1, part2] = expiryInput.split('/');
+    // month
+    if (part1) mm = part1.padStart(2, '0').slice(-2);
+    // year: YY -> 20YY, YYYY stays as-is
+    if (part2) {
+      if (part2.length === 2) yyyy = '20' + part2;
+      else if (part2.length === 4) yyyy = part2;
+    }
+  } else if (expiryInput) {
+    // Fallback: try to interpret MMYY or MMYYYY
+    const digits = expiryInput.replace(/\D/g, '');
+    if (digits.length >= 4) {
+      mm = digits.substring(0, 2).padStart(2, '0');
+      const rest = digits.substring(2);
+      if (rest.length === 2) yyyy = '20' + rest;
+      else if (rest.length === 4) yyyy = rest;
+    } else if (digits.length >= 2) {
+      mm = digits.substring(0, 2).padStart(2, '0');
+    }
+  }
+
+  // Basic sanity
+  if (mm.length !== 2) mm = '01';
+  if (yyyy.length !== 4) yyyy = '2025';
+
+  return { mm, yyyy };
+}
+
 function animateButton(btn) {
   btn.style.transform = "scale(0.9)";
   setTimeout(() => {
@@ -219,7 +251,11 @@ function animateButton(btn) {
 // Generate and display CCs with effects
 document.getElementById('generateBtn').onclick = () => {
   const bin = document.getElementById('bin').value.trim();
-  const expiry = document.getElementById('expiry').value.trim() || '12/25';
+
+  // Read expiry input and convert to MM / YYYY
+  const expiryRaw = document.getElementById('expiry').value.trim() || '12/25';
+  const { mm, yyyy } = parseExpiryInput(expiryRaw);
+
   const cvvInput = document.getElementById('cvv').value.trim();
   const quantity = parseInt(document.getElementById('quantity').value);
   const outputDiv = document.getElementById('output');
@@ -233,13 +269,13 @@ document.getElementById('generateBtn').onclick = () => {
 
   // Generate CCs with animated appearance
   const ccList = [];
-  for (let i=0; i<quantity; i++) {
+  for (let i = 0; i < quantity; i++) {
     const ccNumber = generateCardNumber(bin);
     const cvv = cvvInput !== '' ? cvvInput : (Math.floor(Math.random() * 900) + 100).toString();
-    ccList.push({ ccNumber, expiry, cvv });
+    ccList.push({ ccNumber, mm, yyyy, cvv });
   }
 
-  // Function to animate each line
+  // Function to animate each line (output in the requested format)
   function revealLine(index) {
     if (index >= ccList.length) {
       outputDiv.classList.add('show');
@@ -248,13 +284,16 @@ document.getElementById('generateBtn').onclick = () => {
     const line = ccList[index];
     const spanLine = document.createElement('div');
     spanLine.innerHTML = '';
-    // Create characters with delay
-    const lineStr = `CC: ${line.ccNumber} | Exp: ${line.expiry} | CVV: ${line.cvv}`;
+
+    // Build the output string in the requested format
+    const lineStr = `${line.ccNumber}|${line.mm}|${line.yyyy}|${line.cvv}`;
+
+    // Animate each character for a cool effect
     for (let ch of lineStr) {
       const spanChar = document.createElement('span');
       spanChar.textContent = ch;
       spanChar.className = 'char';
-      spanChar.style.animationDelay = `${Math.random()*0.3}s`;
+      spanChar.style.animationDelay = `${Math.random() * 0.3}s`;
       spanLine.appendChild(spanChar);
     }
     outputDiv.appendChild(spanLine);
@@ -265,7 +304,7 @@ document.getElementById('generateBtn').onclick = () => {
       setTimeout(() => {
         ch.style.opacity = 1;
         ch.style.transform = 'translateY(0)';
-      }, i*20);
+      }, i * 20);
     });
 
     // Reveal next line after delay
